@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       source:
-        description: "Source Branch"
+        description: "Source Repository URL"
         type: string
         required: true
         default: "https://github.com/0x4C334E3438/lede"
@@ -25,27 +25,26 @@ on:
         options:
           - r281
       config_file:
-        description: "Config Name"
+        description: "Configuration File"
         type: choice
         options:
           - lede.config
       config_link:
-        description: "Use Config URL"
+        description: "Use Remote Config URL"
         type: boolean
         default: false
       config_url:
-        description: "Config URL"
+        description: "Remote Config URL (if enabled)"
         type: string
-        required: false
         default: ""
       diy:
-        description: "DIY Script"
+        description: "Custom DIY Script"
         type: choice
         options:
           - diy_v2.sh
           - diy_v1.sh
       firmware_release:
-        description: "Firmware Release"
+        description: "Publish Firmware"
         type: boolean
         default: false
       toolchain_rebuild:
@@ -109,7 +108,7 @@ jobs:
           remove-docker-images: 'true'
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Packages
         env:

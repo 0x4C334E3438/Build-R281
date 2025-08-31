@@ -3,6 +3,7 @@ config defaults
 	option output 'ACCEPT'
 	option forward 'REJECT'
 	option synflood_protect '1'
+	option drop_invalid '1'
 
 config zone
 	option name 'lan'
@@ -24,11 +25,10 @@ config zone
 config zone
 	option name 'vpn'
 	list network 'openvpn'
-	option input 'REJECT'
+	option input 'ACCEPT'
 	option output 'ACCEPT'
-	option forward 'REJECT'
+	option forward 'ACCEPT'
 	option masq '1'
-	option mtu_fix '1'
 
 config forwarding
 	option src 'lan'
@@ -37,6 +37,10 @@ config forwarding
 config forwarding
 	option src 'lan'
 	option dest 'vpn'
+
+config forwarding
+	option src 'vpn'
+	option dest 'lan'
 
 config rule
 	option name 'Allow-DHCP-Renew'

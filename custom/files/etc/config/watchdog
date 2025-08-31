@@ -1,11 +1,11 @@
 config watchdog
         option enabled '0'
         option action 'wan'
-        option log 'all'
+        option log 'offline'
         option delay '600'
         option dest 'facebook.com'
         option period '30'
         option period_count '1'
         option iface 'wwan'
-	option modemrestart '0'
+        option modemrestart '0'
         option ledstatus '0'

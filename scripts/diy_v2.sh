@@ -3,7 +3,7 @@
 echo "Move Custom Files"
 mv -f ./custom/files ./
 
-echo "Patch For NCM"
+echo "Patch NCM"
 mv -f ./custom/patch/ncm.* ./package/network/utils/comgt/files/
 
 echo "Remove Config Folder"

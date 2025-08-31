@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       source:
-        description: "Source Branch"
+        description: "Source Repository URL"
         type: string
         required: true
         default: "https://github.com/0x4C334E3438/openwrt"
@@ -27,39 +27,39 @@ on:
           - openwrt-23.05
           - openwrt-24.10
       config_file:
-        description: "Config Name"
+        description: "Configuration File"
         type: choice
         options:
           - openwrt.config
       config_link:
-        description: "Use Config URL"
+        description: "Use Remote Config URL"
         type: boolean
         default: false
       config_url:
-        description: "Config URL"
+        description: "Remote Config URL (if enabled)"
         type: string
         required: false
         default: ""
       diy:
-        description: "DIY Script"
+        description: "Custom DIY Script"
         type: choice
         options:
           - diy_v1.sh
           - diy_v2.sh
       firmware_release:
-        description: "Firmware Release"
+        description: "Publish Firmware"
         type: boolean
         default: false
       toolchain_rebuild:
         description: "Rebuild Toolchain"
         type: boolean
         default: false
-      vermagic:
-        description: "Replace Vermagic"
+      replace_vermagic:
+        description: "Replace Kernel Vermagic"
         type: boolean
         default: false
-      vermagic_opt:
-        description: "SNAPSHOT Vermagic"
+      use_snapshot_vermagic:
+        description: "Use SNAPSHOT Vermagic"
         type: boolean
         default: true
 
@@ -76,8 +76,8 @@ env:
   FIRMWARE_RELEASE: ${{ github.event.inputs.firmware_release }}
   TOOLCHAIN_REBUILD: ${{ github.event.inputs.toolchain_rebuild }}
   TOOLCHAIN_TAG: toolchain
-  VERMAGIC: ${{ github.event.inputs.vermagic }}
-  VERMAGIC_OPT: ${{ github.event.inputs.vermagic_opt }}
+  VERMAGIC: ${{ github.event.inputs.replace_vermagic }}
+  VERMAGIC_OPT: ${{ github.event.inputs.use_snapshot_vermagic }}
   TOKEN: ${{ secrets.GITHUB_TOKEN }}
   TZ: UTC
   MAX_RETRIES: 3
@@ -121,7 +121,7 @@ jobs:
           remove-docker-images: 'true'
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Packages
         env:

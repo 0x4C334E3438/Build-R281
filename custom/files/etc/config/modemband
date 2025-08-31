@@ -1,6 +1,6 @@
 config modemband
 	option iface 'wwan'
 	option set_port '/dev/ttyACM0'
-	option wanrestart '1'
+	option wanrestart '0'
 	option modemrestart '0'
 	option notify '0'

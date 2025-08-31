@@ -1,4 +1,0 @@
-config default 'default'
-	option priority_enable '0'
-	option limit_mac_enable '0'
-	option limit_enable '0'

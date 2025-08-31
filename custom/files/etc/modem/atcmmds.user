@@ -1,6 +1,7 @@
 Signal Strength > AT+CSQ;AT+CSQ
 Current Cell Info > AT+ZCELLINFO?;AT+ZCELLINFO?
-Carrier Agregation Info > AT+ZCAINFO?;AT+ZCAINFO?
+Carrier Aggregation Info > AT+ZCAINFO?;AT+ZCAINFO?
+Background Cell Searching (30s) > AT+BGLTEPLMN=1,30;AT+BGLTEPLMN=1,30
 Locked Band Info > AT+ZNLOCKBAND?;AT+ZNLOCKBAND?
 Band Info > AT*LTEBAND?;AT*LTEBAND?
 Reboot > AT+CFUN=1,1;AT+CFUN=1,1
@@ -12,3 +13,4 @@ Network (4G) > AT+ZSNT=6,0,0;AT+ZSNT=6,0,0
 Network (3G) > AT+ZSNT=2,0,0;AT+ZSNT=2,0,0
 Network (2G) > AT+ZSNT=1,0,0;AT+ZSNT=1,0,0
 LTE DHCP Lease (12h) > AT+ZDHCPLEASE=43200;AT+ZDHCPLEASE=43200
+Received Incoming SMS > AT+CNMI=1,1,2,1,1;AT+CNMI=1,1,2,1,1

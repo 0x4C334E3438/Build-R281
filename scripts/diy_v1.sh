@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Move Files"
+echo "Move Custom Files"
 mv -f ./custom/files ./
 
 echo "Patch NCM"
