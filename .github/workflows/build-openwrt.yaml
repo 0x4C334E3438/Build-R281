@@ -23,9 +23,10 @@ on:
         description: "Source Branch"
         type: choice
         options:
-          - openwrt-22.03
-          - openwrt-23.05
+          - openwrt-25.12
           - openwrt-24.10
+          - openwrt-23.05
+          - openwrt-22.03
       config_file:
         description: "Configuration File"
         type: choice
@@ -54,14 +55,6 @@ on:
         description: "Rebuild Toolchain"
         type: boolean
         default: false
-      replace_vermagic:
-        description: "Replace Kernel Vermagic"
-        type: boolean
-        default: false
-      use_snapshot_vermagic:
-        description: "Use SNAPSHOT Vermagic"
-        type: boolean
-        default: true
 
 env:
   SOURCE_URL: ${{ github.event.inputs.source }}
@@ -76,8 +69,6 @@ env:
   FIRMWARE_RELEASE: ${{ github.event.inputs.firmware_release }}
   TOOLCHAIN_REBUILD: ${{ github.event.inputs.toolchain_rebuild }}
   TOOLCHAIN_TAG: toolchain
-  VERMAGIC: ${{ github.event.inputs.replace_vermagic }}
-  VERMAGIC_OPT: ${{ github.event.inputs.use_snapshot_vermagic }}
   TOKEN: ${{ secrets.GITHUB_TOKEN }}
   TZ: UTC
   MAX_RETRIES: 3
@@ -92,8 +83,6 @@ jobs:
       SOURCE_OWNER: ${{ steps.env.outputs.SOURCE_OWNER }}
       SOURCE_REPO: ${{ steps.env.outputs.SOURCE_REPO }}
       CURRENT_BRANCH: ${{ steps.env.outputs.CURRENT_BRANCH }}
-      DEVICE_NAME: ${{ steps.env.outputs.DEVICE_NAME }}
-      DEVICE_PLATFORM: ${{ steps.env.outputs.DEVICE_PLATFORM }}
       DEVICE_TARGET: ${{ steps.env.outputs.DEVICE_TARGET }}
       DEVICE_SUBTARGET: ${{ steps.env.outputs.DEVICE_SUBTARGET }}
       TOOLCHAIN_IMAGE: ${{ steps.env.outputs.TOOLCHAIN_IMAGE }}
@@ -121,7 +110,7 @@ jobs:
           remove-docker-images: 'true'
 
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install Packages
         env:
@@ -191,12 +180,6 @@ jobs:
           echo "CURRENT_BRANCH=$CURRENT_BRANCH" >> $GITHUB_ENV
           echo "CURRENT_BRANCH=$CURRENT_BRANCH" >> $GITHUB_OUTPUT
           cd $OPENWRT_ROOT_PATH
-          export DEVICE_NAME=$(grep 'CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/')
-          echo "DEVICE_NAME=$DEVICE_NAME" >> $GITHUB_ENV
-          echo "DEVICE_NAME=$DEVICE_NAME" >> $GITHUB_OUTPUT
-          export DEVICE_PLATFORM=$(grep 'CONFIG_TARGET_ARCH_PACKAGES' .config | awk -F '"' '{print $2}')
-          echo "DEVICE_PLATFORM=$DEVICE_PLATFORM" >> $GITHUB_ENV
-          echo "DEVICE_PLATFORM=$DEVICE_PLATFORM" >> $GITHUB_OUTPUT
           export DEVICE_TARGET=$(grep 'CONFIG_TARGET_BOARD' .config | awk -F '"' '{print $2}')
           echo "DEVICE_TARGET=$DEVICE_TARGET" >> $GITHUB_ENV
           echo "DEVICE_TARGET=$DEVICE_TARGET" >> $GITHUB_OUTPUT
@@ -367,29 +350,6 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Replace Vermagic
-        if: ${{ env.VERMAGIC == 'true' }}
-        run: |
-          snapshot_version="${SOURCE_BRANCH#openwrt-}"
-          release_version=$(curl -s https://api.github.com/repos/openwrt/openwrt/tags \
-            | grep -m1 -oE "\"name\":\s*\"v${snapshot_version}\.[^\"]+\"" \
-            | cut -d'"' -f4 | sed 's/^v//')
-          if [[ "$VERMAGIC_OPT" == "true" ]]; then
-            version="${snapshot_version}-SNAPSHOT"
-          else
-            version="${release_version}"
-          fi
-          kmods=$(curl -s https://downloads.openwrt.org/releases/${version}/targets/${DEVICE_TARGET}/${DEVICE_SUBTARGET}/kmods/ \
-            | grep -oP '<td class="n"><a href="\K[^/]+|<td class="d">\K[^<]+' \
-            | paste -d '|' - - | sort -t '|' -k2 | head -n1 | cut -d '|' -f1)
-          echo "src/gz openwrt_kmods https://downloads.openwrt.org/releases/${version}/targets/${DEVICE_TARGET}/${DEVICE_SUBTARGET}/kmods/${kmods}" >> ./custom/files/etc/opkg/customfeeds.conf
-          cd $OPENWRT_ROOT_PATH
-          grep -q '^CONFIG_VERSION_REPO=' ./.config \
-            && sed -i "s|^CONFIG_VERSION_REPO=.*|CONFIG_VERSION_REPO=\"https://downloads.openwrt.org/releases/${version}\"|" ./.config \
-            || echo -e "\nCONFIG_VERSION_REPO=\"https://downloads.openwrt.org/releases/${version}\"" >> ./.config
-          echo "$kmods" | sed 's/.*-//' > .vermagic
-          sed -i -e 's/^\(.\).*vermagic$/\1cp $(TOPDIR)\/.vermagic $(LINUX_DIR)\/.vermagic/' ./include/kernel-defaults.mk
-
       - name: Load Custom Configuration
         run: |
           if [[ "$CONFIG_LINK" == "true" && -n "$CONFIG_URL" ]]; then
@@ -403,7 +363,7 @@ jobs:
           cp .config ./bin/build.config
 
       - name: Upload Config To Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Build-Config
           path: ${{ env.OPENWRT_ROOT_PATH }}/bin/build.config
@@ -452,9 +412,9 @@ jobs:
           make checksum
 
       - name: Upload Bin To Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
-          name: ${{ env.SOURCE_REPO }}-${{ env.DEVICE_NAME }}-${{ env.BUILD_DATE }}
+          name: ${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.BUILD_DATE }}
           path: ${{ env.OPENWRT_ROOT_PATH }}/bin
           retention-days: 7
 
@@ -470,9 +430,9 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           token: ${{ env.TOKEN }}
-          name: ${{ env.SOURCE_REPO }}_${{ env.SOURCE_BRANCH }}_${{ env.DEVICE_NAME }}
           commit: ${{ env.CURRENT_BRANCH }}
-          tag: ${{ env.SOURCE_REPO }}_${{ env.SOURCE_BRANCH }}_${{ env.DEVICE_NAME }}
+          name: ${{ env.SOURCE_REPO }}_${{ env.SOURCE_BRANCH }}_${{ env.DEVICE_TARGET }}
+          tag: ${{ env.SOURCE_REPO }}_${{ env.SOURCE_BRANCH }}_${{ env.DEVICE_TARGET }}
           artifacts: ${{ env.OPENWRT_ROOT_PATH }}/bin/targets/${{ env.DEVICE_TARGET }}/${{ env.DEVICE_SUBTARGET }}/*
           replacesArtifacts: true
           allowUpdates: true
@@ -480,10 +440,8 @@ jobs:
           body: |
             ### Build Information
             ---
-            - Source Code: ${{ env.SOURCE_URL }}
-            - Source Code Branch: ${{ env.SOURCE_BRANCH }}
+            - Source URL: ${{ env.SOURCE_URL }}
+            - Source Branch: ${{ env.SOURCE_BRANCH }}
             - Device Target: ${{ env.DEVICE_TARGET }}
             - Device Subtarget: ${{ env.DEVICE_SUBTARGET }}
-            - Device Platform: ${{ env.DEVICE_PLATFORM }}
-            - Device Name: ${{ env.DEVICE_NAME }}
             - Build Date: ${{ env.BUILD_DATE }}
