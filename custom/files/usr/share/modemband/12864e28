@@ -1,0 +1,28 @@
+# Notion R2x1
+# Copyright (c) 2023 LENAR
+
+_DEVICE=/dev/ttyACM0
+_DEFAULT_LTE_BANDS="1 2 3 4 5 7 8 20 28 38 39 40 41"
+
+getinfo() {
+	echo "Notion R2x1"
+}
+
+getsupportedbands() {
+	echo "$_DEFAULT_LTE_BANDS"
+}
+
+getbands() {
+	# +ZNLOCKBAND: 18008000015,2000004680380
+	O=$(sms_tool -d $_DEVICE at "at+znlockband?")
+	HEX="0x"$(echo "$O" | awk -F[:,] '{print $2}' | xargs)
+	hextobands "$HEX"
+}
+
+setbands() {
+	BANDS="$1"
+	[ "$BANDS" = "default" ] && BANDS="$_DEFAULT_LTE_BANDS"
+
+	HEX=$(bandstohex "$BANDS")
+	[ "$HEX" != "0" ] && sms_tool -d $_DEVICE at "at+znlockband=1,0,$HEX,0"
+}
